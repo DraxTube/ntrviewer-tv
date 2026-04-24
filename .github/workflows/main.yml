@@ -1,0 +1,59 @@
+on:
+  workflow_dispatch:
+
+jobs:
+  build-android-app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          path: ntrviewer-hr
+
+      - name: Clone SDL3
+        run: |
+          git clone --depth 1 --branch release-3.4.0 https://github.com/libsdl-org/SDL.git SDL
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: 11076708
+
+      - name: Install Android SDK components
+        run: |
+          sdkmanager --install "platforms;android-34" "ndk;27.0.12077973" "build-tools;34.0.0" "cmake;3.22.1"
+
+      - name: Copy SDL3 Java sources
+        run: |
+          mkdir -p ntrviewer-hr/android/app/sdl-java/org/libsdl/app
+          cp SDL/android-project/app/src/main/java/org/libsdl/app/*.java \
+             ntrviewer-hr/android/app/sdl-java/org/libsdl/app/
+
+      - name: Create local.properties
+        run: |
+          echo "sdk.dir=${ANDROID_HOME}" > ntrviewer-hr/android/local.properties
+
+      - name: Setup Gradle wrapper
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.11.1
+
+      - name: Build APK
+        run: |
+          cd ntrviewer-hr/android
+          SDL3_ABS=$(realpath ../../SDL)
+          gradle assembleDebug \
+            -Pandroid.injected.extra.cmake.args="-DSDL3_SRC_DIR=${SDL3_ABS}" \
+            --no-daemon
+        env:
+          ANDROID_NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/27.0.12077973
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NTRViewer-HR-Android
+          path: ntrviewer-hr/android/app/build/outputs/apk/debug/app-debug.apk
