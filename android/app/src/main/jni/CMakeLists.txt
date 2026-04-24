@@ -7,7 +7,7 @@ get_filename_component(SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../.." ABSO
 
 # SDL3 source directory (set by the workflow or user)
 if(NOT DEFINED SDL3_SRC_DIR)
-    set(SDL3_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../SDL")
+    set(SDL3_SRC_DIR "${SRC_DIR}/../SDL")
 endif()
 
 # Build SDL3 as a shared library
